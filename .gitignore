@@ -1,0 +1,25 @@
+# --- OS generated files ---
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# --- Node ---
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# --- Editors / IDEs ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# --- Logs ---
+*.log

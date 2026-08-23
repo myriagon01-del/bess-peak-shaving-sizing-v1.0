@@ -1,0 +1,381 @@
+<body>
+
+<div class="shell">
+
+  <!-- ==================== Sidebar ==================== -->
+  <aside class="side">
+    <div class="side-brand">
+      <svg class="logo" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img"><rect x="5" y="13" width="34" height="22" rx="4" stroke="currentColor" stroke-width="3"/><rect x="41" y="19" width="4" height="10" rx="1.5" fill="currentColor"/><path d="M26 18 L15 26 h7 L19 34 L31 23 h-7 z" fill="currentColor"/></svg>
+      <div class="side-title">
+        <h1 data-i18n="appTitle">BESS Peak-Shaving Sizing</h1>
+        <div class="version" data-i18n="version">v1.0.0</div>
+      </div>
+    </div>
+    <p class="side-sub" data-i18n="subtitle">Battery sizing from real interval data &#183; peak-demand window</p>
+    <nav class="side-nav" role="tablist">
+      <button class="tab-btn active" id="tabSizing" role="tab" data-tab="paneSizing" data-i18n="tabSizing">Analysis &amp; BESS Sizing</button>
+      <button class="tab-btn" id="tabLibrary" role="tab" data-tab="paneLibrary" data-i18n="tabLibrary">Battery &amp; PCS Library</button>
+    </nav>
+    <div class="side-foot">
+      <b data-i18n="brandName">BESS Sizing Tool</b>
+      <span data-i18n="brandSubline">Peak-shaving sizing for C&amp;I</span>
+    </div>
+  </aside>
+
+  <!-- ==================== Main ==================== -->
+  <main class="main">
+
+    <!-- ========== TAB 1: Analysis & BESS Sizing ========== -->
+    <div class="tab-pane active" id="paneSizing" role="tabpanel">
+
+      <!-- Load data -->
+      <div class="card">
+        <p class="panel-title" data-i18n="loadTitle">Load Data (before-PV basis)</p>
+        <label class="fld" for="fileInput" data-i18n="loadLabel">Upload load profile (.xlsx) or CSV</label>
+        <input id="fileInput" type="file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.csv,text/csv" aria-label="Load data file" />
+        <div class="btn-row">
+          <button id="csvTemplateBtn" type="button" data-i18n="csvTemplateBtn">Download CSV template</button> <button id="mapAdjustBtn" type="button" data-i18n="mapAdjustBtn">Adjust mapping</button>
+        </div>
+        <div class="import-status" id="uploadStatus" role="status" aria-live="polite" data-i18n="uploadStatusNoFile">No file selected.</div>
+
+        <div id="mappingPanel" class="mapping-panel" style="display:none">
+          <h4 data-i18n="mappingTitle">Confirm column mapping</h4>
+          <div class="map-grid">
+            <div>
+              <label class="fld" for="mapSheet" data-i18n="mappingSheet">Sheet</label>
+              <select id="mapSheet"></select>
+            </div>
+            <div>
+              <label class="fld" for="mapHeaderRow" data-i18n="mappingHeaderRow">Header row</label>
+              <input id="mapHeaderRow" type="number" min="1" step="1" value="1" />
+            </div>
+            <div class="full">
+              <label class="fld" for="mapTsMode" data-i18n="mappingTsMode">Timestamp columns</label>
+              <select id="mapTsMode">
+                <option value="combined" data-i18n="mappingTsModeCombined">Combined date + time</option>
+                <option value="split" data-i18n="mappingTsModeSplit">Separate date + time</option>
+              </select>
+            </div>
+            <div class="full">
+              <label class="fld" for="mapTsAnchor" data-i18n="mappingTsAnchor">Interval timestamp</label>
+              <select id="mapTsAnchor">
+                <option value="end" data-i18n="mappingTsAnchorEnd">End time</option>
+                <option value="start" data-i18n="mappingTsAnchorStart">Start time</option>
+              </select>
+              <div class="note warn" id="mapConfidence" style="display:none"></div>
+            </div>
+            <div id="mapTsColWrap">
+              <label class="fld" for="mapTsCol" data-i18n="mappingTsCol">Timestamp column</label>
+              <select id="mapTsCol"></select>
+            </div>
+            <div id="mapDateColWrap" style="display:none">
+              <label class="fld" for="mapDateCol" data-i18n="mappingDateCol">Date column</label>
+              <select id="mapDateCol"></select>
+            </div>
+            <div id="mapTimeColWrap" style="display:none">
+              <label class="fld" for="mapTimeCol" data-i18n="mappingTimeCol">Time column</label>
+              <select id="mapTimeCol"></select>
+            </div>
+            <div>
+              <label class="fld" for="mapLoadCol" data-i18n="mappingLoadCol">Load column</label>
+              <select id="mapLoadCol"></select>
+            </div>
+            <div>
+              <label class="fld" for="mapPvCol" data-i18n="mappingPvCol">PV generation column (optional)</label>
+              <select id="mapPvCol"></select>
+            </div>
+            <div>
+              <label class="fld" for="mapExportCol" data-i18n="mappingExportCol">Grid export column (optional)</label>
+              <select id="mapExportCol"></select>
+            </div>
+            <div>
+              <label class="fld" for="mapUnit" data-i18n="mappingUnit">Unit</label>
+              <select id="mapUnit">
+                <option value="kW">kW</option>
+                <option value="MW">MW</option>
+                <option value="W">W</option>
+              </select>
+            </div>
+            <div>
+              <label class="fld" for="mapInterval" data-i18n="mappingInterval">Interval (minutes)</label>
+              <input id="mapInterval" type="number" min="1" step="1" value="30" />
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="primary" id="mapApply" type="button" data-i18n="mappingApply">Apply mapping</button>
+            <button id="mapCancel" type="button" data-i18n="mappingCancel">Cancel</button>
+          </div>
+        </div>
+
+        <div id="validationSummary" class="validation-summary" style="display:none"></div>
+      </div>
+
+      <!-- Chart -->
+      <div class="card">
+        <p class="panel-title" data-i18n="chartTitle">Load profile &amp; selected governing day</p>
+        <div class="two chart-controls">
+          <div>
+            <label class="fld" for="chartViewSelect" data-i18n="chartViewLabel">Chart view</label>
+            <select id="chartViewSelect">
+              <option value="highest-md" data-i18n="chartViewHighest">Highest demand day</option>
+              <option value="governing-energy" data-i18n="chartViewGoverning">Governing Energy Day</option>
+            </select>
+          </div>
+          <div class="chart-kpis">
+            <span data-i18n="highestMdLabel">Highest demand</span><b id="highestMdValue">&#8212;</b>
+            <span data-i18n="governingEnergyLabel">Governing energy day</span><b id="governingEnergyValue">&#8212;</b>
+          </div>
+        </div>
+        <div class="chartwrap"><canvas id="chart"></canvas></div>
+        <div class="dv-summary" id="mainDvSummary" style="display:none">
+          <div><span class="k" data-i18n="dvMdBefore">Peak before</span><span class="v" id="mainMdBefore">&#8212;</span></div>
+          <div><span class="k" data-i18n="dvMdAfter">Peak after</span><span class="v" id="mainMdAfter">&#8212;</span></div>
+          <div><span class="k" data-i18n="dvMdReduction">Peak reduction</span><span class="v hi" id="mainMdReduction">&#8212;</span></div>
+          <span class="dv-verdict" id="mainDvVerdict" style="display:none"></span>
+        </div>
+        <div class="chart-foot">
+          <div class="legend">
+            <span><i class="chip base"></i><span data-i18n="legendLoad">Load (before PV)</span></span>
+            <span id="legTarget"><i class="chip thr"></i><span data-i18n="legendTarget">Shave-to target</span></span>
+            <span><i class="chip batt"></i><span data-i18n="legendBattery">Battery discharge</span></span>
+            <span><i class="chip grid"></i><span data-i18n="legendGridAfter">Grid after BESS</span></span>
+          </div>
+        </div>
+        <p class="note" id="chartNote" data-i18n="chartNote">After upload, the chart shows the actual day with the highest required energy.</p>
+      </div>
+
+      <!-- Configure + result -->
+      <div class="cols">
+        <div class="card">
+          <p class="panel-title" data-i18n="controlsTitle">Sizing controls</p>
+
+          <div class="sec">
+            <label class="fld" for="strategySelect" data-i18n="strategyLabel">Sizing strategy</label>
+            <select id="strategySelect">
+              <option value="static" data-i18n="strategyStatic">Static Threshold</option>
+              <option value="flattop" data-i18n="strategyFlatTop">Dynamic Discharge</option>
+              <option value="const" data-i18n="strategyConst">Constant Discharge</option>
+            </select>
+            <div id="strategyNote" class="edu-note" data-i18n="eduStatic">Static threshold shaves every interval above the target during the sizing window.</div>
+          </div>
+
+          <div class="sec two">
+            <div>
+              <label class="fld" for="targetInput" data-i18n="targetLabel">Shave-to Target Grid Load (kW)</label>
+              <input id="targetInput" type="number" min="0" step="1" value="350" />
+              <div class="btn-row">
+                <button id="autoTargetBtn" type="button" data-i18n="autoTargetBtn">Auto-calculate sustainable target</button>
+              </div>
+              <div class="note" id="autoTargetNote"></div>
+            </div>
+            <div id="constKwWrap" style="display:none">
+              <label class="fld" for="constKwInput" data-i18n="constKwLabel">Discharge power (kW)</label>
+              <input id="constKwInput" type="number" min="1" step="1" value="500" />
+            </div>
+            <div>
+              <label class="fld" for="reserveInput" data-i18n="reserveLabel">Reserve margin (%)</label>
+              <input id="reserveInput" type="number" min="0" step="1" value="10" />
+            </div>
+            <div>
+              <label class="fld" for="modelSelect" data-i18n="modelLabel">Battery model</label>
+              <select id="modelSelect"></select>
+            </div>
+          </div>
+
+          <div class="sec">
+            <div class="reco-grid" id="modelDetails"></div>
+          </div>
+
+          <div class="sec two">
+            <div>
+              <span class="fld" data-i18n="designYearLabel">Design sizing year</span>
+              <div class="model-audit"><b>15</b><span data-i18n="designYearNote">Energy capacity is derated to Year 15. Power is not degradation-derated.</span></div>
+            </div>
+          </div>
+
+          <div class="sec">
+            <label class="fld" for="pvModeSelect" data-i18n="pvModeLabel">PV basis</label>
+            <select id="pvModeSelect">
+              <option value="none" data-i18n="pvModeNone">No PV (grid import = before-PV load)</option>
+              <option value="estimated" data-i18n="pvModeEstimated">Estimated monthly PV (preliminary)</option>
+            </select>
+            <div id="pvEstimatePanel" style="display:none;margin-top:10px">
+              <div class="two">
+                <div>
+                  <label class="fld" for="pvMonthlyInput" data-i18n="pvMonthlyLabel">Monthly PV energy (kWh)</label>
+                  <input id="pvMonthlyInput" type="number" min="0" step="1" value="0" />
+                </div>
+                <div>
+                  <label class="fld" for="pvPeakKwInput" data-i18n="pvPeakKwLabel">PV peak power (kW)</label>
+                  <input id="pvPeakKwInput" type="number" min="0" step="1" value="0" />
+                </div>
+              </div>
+              <div id="pvWarning" class="warning" data-i18n="pvWarning">Preliminary estimate &#8212; not bankable sizing</div>
+            </div>
+          </div>
+
+          <div class="sec two">
+            <div>
+              <span class="fld" data-i18n="sizingWindowLabel">Sizing window</span>
+              <div class="two">
+                <div>
+                  <label class="fld" for="winStartInput" data-i18n="ctrlStartLabel">Start</label>
+                  <input id="winStartInput" type="time" value="14:00" />
+                </div>
+                <div>
+                  <label class="fld" for="winEndInput" data-i18n="ctrlEndLabel">End</label>
+                  <input id="winEndInput" type="time" value="22:00" />
+                </div>
+                <div>
+                  <label class="fld" for="demandIntervalInput" data-i18n="demandIntervalLabel">Demand interval (min)</label>
+                  <input id="demandIntervalInput" type="number" min="5" step="5" value="30" />
+                </div>
+              </div>
+              <div class="note" id="sizingWindowInfo">14:00 &#8211; 22:00</div>
+            </div>
+            <div>
+              <span class="fld" data-i18n="controlWindowLabel">Operational control window</span>
+              <div class="two">
+                <div>
+                  <label class="fld" for="ctrlStartInput" data-i18n="ctrlStartLabel">Start</label>
+                  <input id="ctrlStartInput" type="time" value="13:57" />
+                </div>
+                <div>
+                  <label class="fld" for="ctrlEndInput" data-i18n="ctrlEndLabel">End</label>
+                  <input id="ctrlEndInput" type="time" value="22:03" />
+                </div>
+              </div>
+              <div class="note" id="opReadiness"></div>
+            </div>
+          </div>
+          <div class="note err" id="controlError" style="display:none"></div>
+        </div>
+
+        <div class="card">
+          <p class="panel-title" data-i18n="recoTitle">Recommended BESS Sizing</p>
+          <div id="noData" class="note" data-i18n="noData">Upload load data to size the battery.</div>
+          <div class="reco-grid" id="recoGrid" style="display:none">
+            <div><span data-i18n="recoGoverning">Governing day</span><b id="recoGoverning">&#8212;</b></div>
+            <div><span data-i18n="recoRequiredEnergy">Required energy</span><b id="recoRequiredEnergy">&#8212;</b></div>
+            <div><span data-i18n="recoEnergyPacks">Energy packs</span><b class="hi" id="recoEnergyPacks">&#8212;</b></div>
+            <div><span data-i18n="recoNameplate">Nameplate (gross)</span><b id="recoNameplate">&#8212;</b></div>
+            <div><span data-i18n="recoUsable">Usable capacity</span><b id="recoUsable">&#8212;</b></div>
+            <div><span data-i18n="recoYear15Usable">Year-15 usable capacity</span><b id="recoYear15Usable">&#8212;</b></div>
+            <div><span data-i18n="recoPower">Required power</span><b id="recoPower">&#8212;</b></div>
+            <div><span data-i18n="recoPcs">PCS quantity</span><b id="recoPcs">&#8212;</b></div>
+            <div><span data-i18n="recoPowerPacks">Power-constrained packs</span><b id="recoPowerPacks">&#8212;</b></div>
+          </div>
+          <div id="resultWarn" class="warning" style="display:none"></div>
+          <div class="btn-row" style="margin-top:12px">
+            <button class="primary" id="applyReco" type="button" data-i18n="applyReco">Apply Recommended Sizing</button>
+          </div>
+          <p class="note" id="footNote" data-i18n="footNote">Energy sizing uses every complete actual day within the sizing window; the day with the highest required energy governs. Energy packs = ceil(required energy &#215; (1 + reserve) &#247; usable per pack). Power and PCS are sized separately and never silently replace the energy result.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== TAB 2: Battery & PCS Library ========== -->
+    <div class="tab-pane" id="paneLibrary" role="tabpanel">
+      <div class="card">
+        <p class="panel-title" data-i18n="libTitle">Battery &amp; PCS Library</p>
+        <div class="lib-toolbar">
+          <button class="primary" id="modelNew" type="button" data-i18n="libNew">New model</button>
+          <button id="modelSave" type="button" data-i18n="libSave">Save model</button>
+          <button id="modelDuplicate" type="button" data-i18n="libDuplicate">Duplicate</button>
+          <button id="libExcelDownload" type="button" data-i18n="libExcelDownload">Download Excel Template</button>
+          <button id="libExcelImport" type="button" data-i18n="libExcelImport">Upload Excel Library</button>
+          <button id="libReset" type="button" data-i18n="libReset">Reset</button>
+          <input id="libExcelFile" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none" aria-label="Import library Excel" />
+        </div>
+        <table class="lib">
+          <thead>
+            <tr>
+              <th data-i18n="libColName">Name</th>
+              <th data-i18n="libColBrand">Brand</th>
+              <th data-i18n="libColGross">Gross kWh</th>
+              <th data-i18n="libColDoD">DoD %</th>
+              <th data-i18n="libColRTE">RTE %</th>
+              <th data-i18n="libColAux">Aux %</th>
+              <th data-i18n="libColUsable">Usable/pack</th>
+              <th data-i18n="libColSOH15">SOH Y15</th>
+              <th data-i18n="libColUsable15">Usable Y15</th>
+              <th data-i18n="libColPower">Pack kW</th>
+              <th data-i18n="libColPcs">PCS kW</th>
+              <th data-i18n="libColActions">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="libraryTbody"></tbody>
+        </table>
+        <div class="status" id="libraryStatus" role="status" aria-live="polite"></div>
+
+        <div class="model-form" id="modelForm" style="margin-top:14px">
+          <div>
+            <label class="fld" for="mName" data-i18n="mName">Name</label>
+            <input id="mName" type="text" value="" />
+          </div>
+          <div>
+            <label class="fld" for="mBrand" data-i18n="mBrand">Brand</label>
+            <input id="mBrand" type="text" value="" />
+          </div>
+          <div>
+            <label class="fld" for="mGross" data-i18n="mGross">Gross pack kWh</label>
+            <input id="mGross" type="number" min="1" step="0.1" value="2250" />
+          </div>
+          <div>
+            <label class="fld" for="mSocMin" data-i18n="mSocMin">Min SOC %</label>
+            <input id="mSocMin" type="number" min="0" max="100" step="0.1" value="5" />
+          </div>
+          <div>
+            <label class="fld" for="mSocMax" data-i18n="mSocMax">Max SOC %</label>
+            <input id="mSocMax" type="number" min="0" max="100" step="0.1" value="100" />
+          </div>
+          <div class="full helper" data-i18n="helperDoD">DoD is calculated as Max SOC - Min SOC.</div>
+          <div>
+            <label class="fld" for="mRte" data-i18n="mRte">RTE %</label>
+            <input id="mRte" type="number" min="1" max="100" step="0.1" value="85" />
+          </div>
+          <div>
+            <label class="fld" for="mAux" data-i18n="mAux">Auxiliary factor %</label>
+            <input id="mAux" type="number" min="1" max="100" step="0.1" value="100" />
+          </div>
+          <div class="full helper" data-i18n="helperAux">Auxiliary retention factor: 98% means 2% auxiliary loss.</div>
+          <div>
+            <label class="fld" for="mPackPower" data-i18n="mPackPower">Pack rated power kW</label>
+            <input id="mPackPower" type="number" min="1" step="0.1" value="1125" />
+          </div>
+          <div>
+            <label class="fld" for="mPcsPower" data-i18n="mPcsPower">PCS rated power kW</label>
+            <input id="mPcsPower" type="number" min="1" step="0.1" value="1125" />
+          </div>
+          <div>
+            <label class="fld" for="mFirstDeg" data-i18n="mFirstDeg">First-year degradation %</label>
+            <input id="mFirstDeg" type="number" min="0" max="100" step="0.01" value="0" />
+          </div>
+          <div>
+            <label class="fld" for="mAnnualDeg" data-i18n="mAnnualDeg">Annual degradation, years 2-15 %</label>
+            <input id="mAnnualDeg" type="number" min="0" max="100" step="0.01" value="0" />
+          </div>
+          <div>
+            <label class="fld" for="mRteDefinition" data-i18n="mRteDefinition">RTE definition</label>
+            <input id="mRteDefinition" type="text" value="AC-to-AC system RTE" />
+          </div>
+          <div class="full model-audit" id="modelDegradationAudit"></div>
+          <div>
+            <label class="fld" for="mDegNotes" data-i18n="mDegNotes">Degradation / reserve notes</label>
+            <textarea id="mDegNotes"></textarea>
+          </div>
+          <div class="full">
+            <label class="fld" for="mSrcNotes" data-i18n="mSrcNotes">Source notes</label>
+            <textarea id="mSrcNotes"></textarea>
+          </div>
+          <div class="full btn-row">
+            <button id="modelDelete" type="button" data-i18n="libDelete">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+</body>
