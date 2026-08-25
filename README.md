@@ -83,6 +83,12 @@ sheet of the library template.
 
 ---
 
+## Security note
+
+This build has **no passcode / login gate** — it opens directly with no access
+code required. The repository is **private**; distribute the tool only within
+your team.
+
 ## License
 
 MIT — see [`LICENSE`](LICENSE). Bundled third-party libraries (Chart.js,
